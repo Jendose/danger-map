@@ -1,2 +1,6 @@
-rootProject.name = 'com.danger-map'
-
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+    }
+}
+rootProject.name = 'com.hazardous_zones'
