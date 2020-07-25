@@ -1,6 +1,6 @@
 package com.hazardous_zones.dto;
 
-public class AddHazardousZoneDto {
+public class ManageHazardousZoneDto {
     private String name;
     private Double latitude;
     private Double longitude;

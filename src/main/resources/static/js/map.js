@@ -4,6 +4,16 @@ var geolocation = ymaps.geolocation;
 var map; //карта
 var newMark;
 var arrValueNewMark;
+var temps=[];
+var zones = new Map([
+  ['BIOLOGICAL_HAZARD',  'Биологически опасная зона'],
+  ['GEOLOGICAL_HAZARD',    'Геологически опасная зона'],
+  ['AIR_POLLUTION', 'Загрязнение воздуха'],
+  ['WATER_POLLUTION', 'Загрязнение воды'],
+  ['CHEMICAL_HAZARD', 'Химически опасная зона'],
+  ['RADIATION_HAZARD', 'Радиационно опасная зона'],
+  ['INDUSTRIAL_AREA', 'Промышленная зона']
+]);
 var attributes=['Количество радиоактивных отходов',
 				'Количество перерабатываемых отходов',
 				'Количество неперерабатываемых отходов',
@@ -18,60 +28,51 @@ var attributes=['Количество радиоактивных отходов'
 				'Работа с легковоспламеняющимися веществами'];
 
 //массив меток, которые приходят с бека:
-var placemarks=[];/*var placemarks=[
-	{
-		latitude:52.528,
-		longitude:46.060
-	},
-	{
-		latitude:51.538,
-		longitude:46.060
-	},
-	{
-		latitude:51.548,
-		longitude:46.060
-	}
-];*/
-
-$.ajax({
-    contentType: "application/json; charset=UTF-8",
-    dataType: 'html',
-    type: 'GET',
-    url: '/hazardous_zone_list',
-    headers: {
-        'X-CSRF-TOKEN' : $('meta[name="csrf-token"]').attr('content')
-    },
-    success: function(data) {
-        placemarks=JSON.parse(data);
-        ymaps.ready(init);
-    }
-});
-//функция получения погоды
+var placemarks=[];
 function weatherMark(lat,lon,i){
 	var str='http://api.openweathermap.org/data/2.5/weather?lat=';
 	str=str+lat+'&lon='+lon+'&appid=f777240c1df04c003483ae007b5c6958';
 		fetch(str)
 			.then(function (resp){return resp.json() })
 			.then(function(data){
-				temp=data.main.temp-273.15;
-				placemarks[i].balloonContent='<div>t(C)='+temp+'</div>'+'<button type="button" onclick="deleteMark('+placemarks[i].latitude+','+placemarks[i].longitude+')" class="btn btn-danger">Удалить</button>';
-				//var el =document.getElementById('place1');
-				//console.log(el);
-				//el.innerText=temp;
-				//return temp;
+				var temp=data.main.temp-273.15;
+				var s='<li class="list-group-item">T(C) = '+temp+'</li></ul>';
+				temps[i]=s;
+		
 			})
 			.catch(function (){
 
 			});
 	};
-for(var i=0; i<placemarks.length;i++){ weatherMark(placemarks[i].latitude,placemarks[i].longitude,i);};
+//for(var i=0; i<placemarks.length;i++){ weatherMark(placemarks[i].latitude,placemarks[i].longitude,i);};
+$.ajax({
+    contentType: "application/json; charset=UTF-8",
+    dataType: 'html',
+    type: 'GET',
+    url: '/get_hazardous_zone_list',
+    headers: {
+        'X-CSRF-TOKEN' : $('meta[name="csrf-token"]').attr('content')
+    },
+    success: function(data) {
+        placemarks=JSON.parse(data);
+		for(var i=0; i<placemarks.length;i++){ weatherMark(placemarks[i].latitude,placemarks[i].longitude,i);};
+		console.log(temps);
+        ymaps.ready(init);
+    }
+});
+//ymaps.ready(init);
+
 
 
 geoObjects=[]; //массив меток, которые на карте из данных с бд.
 
 //создание карты:
 function init(){
+	for (var i = 0; i < placemarks.length; i++) {
+		placemarks[i].hazardousZoneType
+	}
 
+    console.log(temps);
 	var inputSearch = new ymaps.control.SearchControl({
         options: {
             // Пусть элемент управления будет
@@ -100,48 +101,25 @@ function init(){
 			str=str+'<li class="list-group-item">'+attributes[j]+
 				' = '+arrValueNewMark[j]+'</li>';
 		}
-		str=str+'<li class="list-group-item">Результат нейронной сети'+
-				' = '+placemarks[i].hazardousZoneType+'</li></ul>';
+		str=str+'<li class="list-group-item">Тип зоны'+
+				' = '+zones.get(placemarks[i].hazardousZoneType)+'</li>'+temps[i];
 
-		var str1='http://api.openweathermap.org/data/2.5/weather?lat=';
-		str1=str1+placemarks[i].latitude+'&lon='+placemarks[i].longitude+'&appid=f777240c1df04c003483ae007b5c6958';
-		
-		
-		console.log(str1);
-			fetch(str1)
-				.then(function (resp){return resp.json() })
-				.then(function(data){
-					 var temp=data.main.temp-273.15;
-					str=str+'<div>t(C)='+temp+'</div>'+'<button type="button" onclick="deleteMark('+placemarks[i].latitude+','+placemarks[i].longitude+')" class="btn btn-danger">Удалить</button>';
-					//var el =document.getElementById('place1');
-					//console.log(el);
-					//el.innerText=temp;
-					//return temp;
-					console.log(temp);
-					
-					//map.addOverlay(geoObjects[i]);
-					console.log(geoObjects[i]);
-				})
-				.catch(function (){
+		str=str+'<button type="button" onclick="deleteMark('+placemarks[i].latitude+','+placemarks[i].longitude+')" class="btn btn-danger">Удалить</button>';
 
-				});
 
+		console.log(temps);
+		console.log(temps[i]);
 		geoObjects[i]=new ymaps.Placemark([placemarks[i].latitude,placemarks[i].longitude],{
 						hintContent:placemarks[i].name,
 						balloonContent: str
 					},{
-						iconLayout:'default#image',
-						//iconImageHref:'img/map-marker.png',
-						//iconImageSize: [50,50],
-						//iconImageOffset:[-23,-57]
+						iconLayout:'default#image'
 					});
 		
 	}
 	var clusterer=new ymaps.Clusterer({
 
 		});
-
-	//map.geoObjects.add(placemark);
 	map.geoObjects.add(clusterer);
 	clusterer.add(geoObjects);
 
@@ -258,11 +236,10 @@ function addMarkPlace(){
 			var plmark=createAndAddPlacemark([ob.latitude,ob.longitude],ob);
 			map.geoObjects.add(plmark);
 			console.log(placemarks);
-			var ob1={
+			var ManageHazardousZoneDto={
 				name:newMark.name,
 				latitude:Number(newMark.latitude),
 				longitude:Number(newMark.longitude),
-				hazardousZoneType: 'INDUSTRIAL_AREA',
 				nuclearWasteAmount: arrValueNewMark[0],
 				recycledWasteAmount: arrValueNewMark[1],
 				unrecyclableWasteAmount: arrValueNewMark[2],
@@ -274,37 +251,31 @@ function addMarkPlace(){
 				rockDestructionLevel: arrValueNewMark[8],
 				industrialEnterprisesNumber: arrValueNewMark[9],
 				reservoirExist: arrValueNewMark[10],
-				flammableSubstancesExist: arrValueNewMark[11]
+				flammableSubstancesExist: arrValueNewMark[11],
+				hazardousZoneType: newMark.hazardousZoneType
 
 			};
-			console.log(ob1);
+			console.log(ManageHazardousZoneDto);
 			$('#staticBackdrop1').modal('hide');
 
 			$.ajax({
 		        contentType: "application/json; charset=UTF-8",
-		        dataType: 'json',
+		        dataType: 'html',
 		        type: 'POST',
 		        url: '/add_hazardous_zone',
-		        data: JSON.stringify(ob1),
+		        data: JSON.stringify(ManageHazardousZoneDto),
 		        headers: {
 		            'X-CSRF-TOKEN' : $('meta[name="csrf-token"]').attr('content')
 		        },
-		        success: function() {
+		        success: function(data) {
+					placemarks[placemarks.length-1].id=Number(data);
 		            //$("#track-list").html(data);
 		        }
     		});
-			
-			//var el =document.getElementById('place1');
-			//console.log(el);
-			//el.innerText=temp;
-			//return temp;
 		})
 		.catch(function (){
 
 		});
-	
-	//window.location.reload();
-	//ymaps.map.redraw();
 }
 
 function createAndAddPlacemark(coords,ob) {
@@ -320,17 +291,44 @@ function createAndAddPlacemark(coords,ob) {
     }
  function deleteMark(lat,lon){
  	//var collection = new ymaps.GeoObjectCollection(null, { preset: group.style });
+
+
+ 	
+
+  	var id;
  	map.geoObjects.removeAll();
  	var placemarks1=[];
- 	for(var i=0;i<placemarks.length;i++){
- 		if(placemarks[i].latitude==lat&&placemarks[i].longitude==lon) placemarks.splice(i,1);
- 	};
  	console.log(placemarks);
+ 	for(var i=0;i<placemarks.length;i++){
+ 		if(placemarks[i].latitude==lat&&placemarks[i].longitude==lon) {
+
+ 			id=placemarks[i].id;
+ 			console.log(placemarks.length);
+ 			placemarks.splice(i,1);
+			console.log(placemarks.length);
+ 			temps.splice(i,1);
+ 		}
+ 	};
+
+	$.ajax({
+		        contentType: "application/json; charset=UTF-8",
+		        dataType: 'html',
+		        type: 'GET',
+		        url: '/delete_hazardous_zone/' + id,
+		        // data: id,
+		        headers: {
+		            'X-CSRF-TOKEN' : $('meta[name="csrf-token"]').attr('content')
+		        },
+		        success: function(data) {
+		            //$("#track-list").html(data);
+		        }
+    		});
+ 	console.log(placemarks);
+ 	console.log(id);
 	geoObjects=[];
  	for(var i=0; i<placemarks.length;i++){
 		geoObjects[i]=new ymaps.Placemark([placemarks[i].latitude,placemarks[i].longitude],{
-			hintContent:placemarks[i].hintContent,
-			balloonContent: placemarks[i].balloonContent
+			hintContent:placemarks[i].hintContent
 		},{
 			iconLayout:'default#image',
 		});
@@ -341,30 +339,16 @@ function createAndAddPlacemark(coords,ob) {
 	});
 	//map.geoObjects.add(placemark);
 	map.geoObjects.add(clusterer);
-	delete myPlacemark;
+	if(myPlacemark) map.geoObjects.add(myPlacemark);
+	// delete myPlacemark;
 	clusterer.add(geoObjects);
+	drawMarks();
+	// location.reload();
 
 
 
  }
 
-
-/*
- $.ajax({
-        contentType: "application/json; charset=UTF-8",
-        dataType: 'html',
-        type: 'GET',
-        url: '/filter',
-        //data: JSON.stringify(result),
-        headers: {
-            'X-CSRF-TOKEN' : $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(data) {
-            //$("#track-list").html(data);
-            console.log(data);
-        }
-    });
-    */
 
 
 
@@ -375,10 +359,9 @@ function checkNeuro(){
 	var arr=[]
 	for(var i=0;i<elements.length;i++) arr.push(parseFloat(elements[i].value));
 	arrValueNewMark=arr;
-	console.log(arr);
 	//отправляем массив на бек в нейронку
 
-	var rez='Здесь какой-то результат'
+	//var rez='Промышленные зоны'
 	newMark.nuclearWasteAmount=arr[0];
 	newMark.recycledWasteAmount=arr[1];
 	newMark.unrecyclableWasteAmount=arr[2];
@@ -392,11 +375,45 @@ function checkNeuro(){
 	newMark.reservoirExist=arr[10];
 	newMark.flammableSubstancesExist=arr[11];
 
-	newMark.hazardousZoneType=rez;
+	var ManageHazardousZoneDto={
+				name:'',
+				latitude:Number(newMark.latitude),
+				longitude:Number(newMark.longitude),
+				nuclearWasteAmount: arrValueNewMark[0],
+				recycledWasteAmount: arrValueNewMark[1],
+				unrecyclableWasteAmount: arrValueNewMark[2],
+				averageTemperature: arrValueNewMark[3],
+				averageAttendance: arrValueNewMark[4],
+				waterPollutionRate: arrValueNewMark[5],
+				airPollutionRate: arrValueNewMark[6],
+				soilPollutionRate: arrValueNewMark[7],
+				rockDestructionLevel: arrValueNewMark[8],
+				industrialEnterprisesNumber: arrValueNewMark[9],
+				reservoirExist: arrValueNewMark[10],
+				flammableSubstancesExist: arrValueNewMark[11],
+				hazardousZoneType: 'AIR_POLLUTION'
 
-	console.log(newMark);
-	document.getElementById('rezNeuro').innerHTML=rez;
-	$('#staticBackdrop1').modal();
+			};
+			$.ajax({
+		        contentType: "application/json; charset=UTF-8",
+		        dataType: 'html',
+		        type: 'POST',
+		        url: '/check_hazardous_zone',
+		        data: JSON.stringify(ManageHazardousZoneDto),
+		        headers: {
+		            'X-CSRF-TOKEN' : $('meta[name="csrf-token"]').attr('content')
+		        },
+		        success: function(data) {
+		        	for (var [key, value] of zones) {
+		        		if(key==data){
+							document.getElementById('rezNeuro').innerHTML=value;
+							newMark.hazardousZoneType = data;
+							$('#staticBackdrop1').modal();
+							break;
+		        		}
+					}
+		        }
+    		});
 
 }
 
@@ -423,7 +440,44 @@ function getBalloonContent(){
 		str=str+'<li class="list-group-item">'+attributes[i]+
 			' = '+arrValueNewMark[i]+'</li>';
 	}
-	str=str+'<li class="list-group-item">Результат нейронной сети'+
-			' = '+newMark.hazardousZoneType+'</li>';
+	str=str+'<li class="list-group-item">Тип зоны'+
+		' = '+zones.get(newMark.hazardousZoneType)+'</li>';
 	return str;
+};
+
+function drawMarks(){
+
+	var str='';
+	for(var i=0; i<placemarks.length;i++){
+		str='<ul class="list-group">';
+		str=str+'<li class="list-group-item">Местоположение: '+placemarks[i].name+'</li>';
+		s(placemarks[i]);
+		for(var j=0; j<attributes.length;j++){
+			str=str+'<li class="list-group-item">'+attributes[j]+
+				' = '+arrValueNewMark[j]+'</li>';
+		}
+		str=str+'<li class="list-group-item">Тип зоны'+
+			' = '+zones.get(placemarks[i].hazardousZoneType)+'</li>'+temps[i];
+
+		console.log(temps);
+		str=str+temps[i];
+		str=str+'<button type="button" onclick="deleteMark('+placemarks[i].latitude+','+placemarks[i].longitude+')" class="btn btn-danger">Удалить</button>';
+		//str=str+'<li class="list-group-item">t(C)='+temp+'</li></ul>'+'<button type="button" onclick="deleteMark('+placemarks[i].latitude+','+placemarks[i].longitude+')" class="btn btn-danger">Удалить</button>';
+		
+		geoObjects[i]=new ymaps.Placemark([placemarks[i].latitude,placemarks[i].longitude],{
+						hintContent:placemarks[i].name,
+						balloonContent: str
+					},{
+						iconLayout:'default#image'
+					});
+		
+	}
+	var clusterer=new ymaps.Clusterer({
+
+		});
+
+	//map.geoObjects.add(placemark);
+	map.geoObjects.add(clusterer);
+	clusterer.add(geoObjects);
+
 }

@@ -34,5 +34,7 @@ public class HazardousZonesApplication implements CommandLineRunner {
 //        hazardousZoneRepository.save(hazardousZone2);
 //        hazardousZoneRepository.save(hazardousZone3);
 
+//        System.out.println(hazardousZone1.getProperties());
+
     }
 }

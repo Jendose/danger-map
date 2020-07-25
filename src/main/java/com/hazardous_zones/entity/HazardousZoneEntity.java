@@ -10,7 +10,6 @@ public class HazardousZoneEntity {
     @Id
     @Column(name = "zone_id", unique = true, nullable = false)
     @GeneratedValue(generator = "increment")
-    @GenericGenerator(name = "increment", strategy = "increment")
     private Long id;
 
     // НАЗВАНИЕ
@@ -72,13 +71,21 @@ public class HazardousZoneEntity {
 
     // ПОЛУЧИТЬ МАССИВ ПАРАМЕТРОВ ЗОНЫ
     public double[] getProperties() {
-        return new double[]{nuclearWasteAmount, recycledWasteAmount, unrecyclableWasteAmount, averageTemperature, averageAttendance, waterPollutionRate, airPollutionRate, soilPollutionRate, rockDestructionLevel, industrialEnterprisesNumber, reservoirExist, flammableSubstancesExist};
+        return new double[]{
+                nuclearWasteAmount,
+                recycledWasteAmount,
+                unrecyclableWasteAmount,
+                averageTemperature,
+                averageAttendance,
+                waterPollutionRate,
+                airPollutionRate,
+                soilPollutionRate,
+                rockDestructionLevel,
+                industrialEnterprisesNumber,
+                reservoirExist,
+                flammableSubstancesExist};
     }
 
-    // ПОЛУЧИТЬ МАССИВ НОРМАЛИЗОВАННЫХ ПАРАМЕТРОВ ЗОНЫ
-//    public double[] getNormalizedProperties(){
-//
-//    }
 
 
     public Long getId() {

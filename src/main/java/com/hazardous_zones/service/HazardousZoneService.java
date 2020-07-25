@@ -1,11 +1,13 @@
 package com.hazardous_zones.service;
 
-import com.hazardous_zones.dto.AddHazardousZoneDto;
+import com.hazardous_zones.dto.ManageHazardousZoneDto;
 import com.hazardous_zones.entity.HazardousZoneEntity;
 import com.hazardous_zones.entity.enums.HazardousZoneType;
 import com.hazardous_zones.repository.HazardousZoneRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 
 @Service
 public class HazardousZoneService {
@@ -17,8 +19,8 @@ public class HazardousZoneService {
         return hazardousZoneRepository.findAll();
     }
 
-    public void addHazardousZone(AddHazardousZoneDto params){
-        HazardousZoneEntity hazardousZone = new HazardousZoneEntity(
+    public HazardousZoneEntity getHazardousZoneByDto(ManageHazardousZoneDto params){
+        return new HazardousZoneEntity(
                 params.getName(),
                 params.getLatitude(),
                 params.getLongitude(),
@@ -35,6 +37,22 @@ public class HazardousZoneService {
                 params.getIndustrialEnterprisesNumber(),
                 params.getReservoirExist(),
                 params.getFlammableSubstancesExist());
-        hazardousZoneRepository.save(hazardousZone);
+    }
+
+    public String checkHazardousZone(ManageHazardousZoneDto params){
+        HazardousZoneEntity hazardousZoneEntity = getHazardousZoneByDto(params);
+        double[] properties = hazardousZoneEntity.getProperties();
+        double[] results;
+        // Получение массива результатов, поиск наибольшего, получение строки с названием
+        return "INDUSTRIAL_AREA";
+    }
+
+    public Long addHazardousZone(ManageHazardousZoneDto params){
+        HazardousZoneEntity hazardousZone = hazardousZoneRepository.save(getHazardousZoneByDto(params));
+        return hazardousZone.getId();
+    }
+
+    public void deleteHazardousZone(Long id){
+        hazardousZoneRepository.deleteById(id);
     }
 }
